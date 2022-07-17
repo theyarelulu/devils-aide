@@ -19,3 +19,12 @@ dependencies {
 tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "1.8"
 }
+
+task<Copy>("copyToLib") {
+    into("$buildDir/libs")
+    from(configurations.compileClasspath)
+}
+
+task("stage") {
+    dependsOn("clean", "build", "copyToLib")
+}
