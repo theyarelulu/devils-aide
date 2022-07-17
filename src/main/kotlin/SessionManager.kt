@@ -38,7 +38,7 @@ class SessionManager(category: Category) {
     fun slashCommand(event: SlashCommandInteractionEvent) {
         when(event.subcommandName) {
             "start" -> userInitiatedSessionStart(event)
-            "close" -> userInitiatedSessionClose(event)
+            "end" -> userInitiatedSessionEnd(event)
         }
     }
 
@@ -48,7 +48,7 @@ class SessionManager(category: Category) {
     fun userContext(event: UserContextInteractionEvent) {
         when(event.name) {
             "Add to session" -> adminInitiatedSessionStart(event)
-            "Remove from session" -> adminInitiatedSessionClose(event)
+            "Remove from session" -> adminInitiatedSessionEnd(event)
         }
     }
 
@@ -57,51 +57,57 @@ class SessionManager(category: Category) {
      */
     private fun adminInitiatedSessionStart(event: UserContextInteractionEvent) = scope.launch {
         val target = event.interaction.targetMember!!
-        val session = sessions.computeIfAbsent(target.idLong) { event.jda.createChannelAsync(event.member!!, target) }
+        val sessionId = sessions.computeIfAbsent(target.idLong) { event.jda.createChannelAsync(event.member!!, target) }
 
-        event.takeUnless { session.isCompleted } // when session doesn't exist
+        event.takeUnless { sessionId.isCompleted } // when session doesn't exist
             ?.deferReply(true)?.await() // defer the reply
-            ?.editOriginal("${target.asMention}'s new session is ready: <#${session.await()}>")?.await()
-            ?: event.reply("${target.asMention} already has an active session: <#${session.await()}>") // exists
+            ?.editOriginal("${target.asMention}'s new session is ready: <#${sessionId.await()}>")?.await()
+            ?: event.reply("${target.asMention} already has an active session: <#${sessionId.await()}>")
                 .setEphemeral(true).await()
     }
 
     /**
      * Processes close requests initiated by admin.
      */
-    private fun adminInitiatedSessionClose(event: UserContextInteractionEvent) = scope.launch {
+    private fun adminInitiatedSessionEnd(event: UserContextInteractionEvent) = scope.launch {
         val target = event.interaction.targetMember!!
-        val session = sessions.remove(target.idLong)?.await()
+        val sessionId = sessions.remove(target.idLong)?.await()
 
-        session?.let { event.deferReply(true).await() } // when session exists, defer reply
-            ?.also { event.jda.deleteChannelAsync(session, event.member!!, target).await() } // then delete the channel
-            ?.editOriginal("${target.asMention}'s session has been successfully ended")?.await()
+        val interaction = sessionId?.let { event.deferReply(true).await() } // when session exists, defer reply
+            ?.also { event.jda.deleteChannelAsync(sessionId, event.member!!, target).await() } // delete the channel
             ?: event.reply("${target.asMention} does not have an active session").setEphemeral(true).await()
+
+        sessionId?.let { interaction }
+            ?.takeUnless { event.channel?.idLong == sessionId } // protection against replying in deleted channels
+            ?.editOriginal("${target.asMention}'s session has been successfully ended")?.await()
     }
 
     /**
      * Processes session start requests initiated by the user.
      */
     private fun userInitiatedSessionStart(event: SlashCommandInteractionEvent) = scope.launch {
-        val session = sessions.computeIfAbsent(event.member!!.idLong) { event.jda.createChannelAsync(event.member!!) }
+        val sessionId = sessions.computeIfAbsent(event.member!!.idLong) { event.jda.createChannelAsync(event.member!!) }
 
-        event.takeUnless { session.isCompleted } // when session doesn't exist
+        event.takeUnless { sessionId.isCompleted } // when session doesn't exist
             ?.deferReply(true)?.await() // defer the reply
-            ?.editOriginal("Your new session is ready: <#${session.await()}>")?.await()
-            ?: event.reply("You already have an active session: <#${session.await()}>") // when session exists
+            ?.editOriginal("Your new session is ready: <#${sessionId.await()}>")?.await()
+            ?: event.reply("You already have an active session: <#${sessionId.await()}>") // when session exists
                 .setEphemeral(true).await()
     }
 
     /**
      * Processes session close requests initiated by the user.
      */
-    private fun userInitiatedSessionClose(event: SlashCommandInteractionEvent) = scope.launch {
-        val session = sessions.remove(event.user.idLong)?.await()
+    private fun userInitiatedSessionEnd(event: SlashCommandInteractionEvent) = scope.launch {
+        val sessionId = sessions.remove(event.user.idLong)?.await()
 
-        session?.let { event.deferReply(true).await() } // when session exists, defer reply
-            ?.also { event.jda.deleteChannelAsync(session, event.member!!).await() } // then delete the channel
-            ?.editOriginal("Your session has been successfully ended")?.await()
+        val interaction = sessionId?.let { event.deferReply(true).await() } // when session exists, defer reply
+            ?.also { event.jda.deleteChannelAsync(sessionId, event.member!!).await() } // then delete the channel
             ?: event.reply("You do not have an active session").setEphemeral(true).await()
+
+        sessionId?.let { interaction }
+            ?.takeUnless { event.channel.idLong == sessionId } // protection against replying in deleted channels
+            ?.editOriginal("Your session has been successfully ended")?.await()
     }
 
     /**
@@ -139,6 +145,7 @@ class SessionManager(category: Category) {
             reason += " on behalf of ${target.effectiveName} (${target.idLong})"
 
         getTextChannelById(targetChannel)?.delete()?.reason(reason)?.await()
+
     }
 
     /**
