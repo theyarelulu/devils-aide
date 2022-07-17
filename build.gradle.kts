@@ -20,11 +20,19 @@ tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "1.8"
 }
 
-task<Copy>("copyToLib") {
-    into("$buildDir/libs")
-    from(configurations.compileClasspath)
-}
+tasks.register<Jar>("uberJar") {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    archiveClassifier.set("uber")
 
-task("stage") {
-    dependsOn("clean", "build", "copyToLib")
+    manifest {
+        attributes["Main-Class"] = "BotKt"
+    }
+
+    from(sourceSets.main.get().output)
+
+    dependsOn(configurations.runtimeClasspath)
+
+    from({
+        configurations.runtimeClasspath.get().filter { it.name.endsWith("jar") }.map { zipTree(it) }
+    })
 }

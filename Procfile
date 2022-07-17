@@ -1,1 +1,1 @@
-worker: java -jar libs/DevilsAide.jar
+worker: java -jar build/libs/DevilsAide-uber.jar
