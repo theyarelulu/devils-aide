@@ -10,7 +10,7 @@ repositories {
 }
 
 dependencies {
-    implementation("net.dv8tion", "JDA", "5.0.0-alpha.13") {
+    implementation("net.dv8tion", "JDA", "5.0.0-alpha.14") {
         exclude("club.minnced", "opus-java")
     }
     implementation("com.github.minndevelopment", "jda-ktx", "d5c5d9d")
