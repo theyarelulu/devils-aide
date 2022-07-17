@@ -10,10 +10,10 @@ repositories {
 }
 
 dependencies {
-    implementation("net.dv8tion", "JDA", "5.0.0-alpha.14") {
+    implementation("net.dv8tion", "JDA", "5.0.0-alpha.15") {
         exclude("club.minnced", "opus-java")
     }
-    implementation("com.github.minndevelopment", "jda-ktx", "d5c5d9d")
+    implementation("com.github.minndevelopment", "jda-ktx", "03b07e7")
 }
 
 tasks.withType<KotlinCompile> {
