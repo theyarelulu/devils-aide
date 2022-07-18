@@ -1,1 +1,0 @@
-worker: java -Xms256M -Xmx256M -jar build/libs/DevilsAide-uber.jar
