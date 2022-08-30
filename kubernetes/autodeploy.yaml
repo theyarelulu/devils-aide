@@ -1,0 +1,168 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    stage: production
+  managedFields:
+    - apiVersion: apps/v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:metadata':
+          'f:labels':
+            .: {}
+            'f:stage': {}
+        'f:spec':
+          'f:progressDeadlineSeconds': {}
+          'f:replicas': {}
+          'f:revisionHistoryLimit': {}
+          'f:selector': {}
+          'f:strategy':
+            'f:rollingUpdate':
+              .: {}
+              'f:maxSurge': {}
+              'f:maxUnavailable': {}
+            'f:type': {}
+          'f:template':
+            'f:metadata':
+              'f:labels':
+                .: {}
+                'f:stage': {}
+            'f:spec':
+              'f:containers':
+                'k:{"name":"devils-aide-1"}':
+                  .: {}
+                  'f:env':
+                    .: {}
+                    'k:{"name":"DISCORD_TOKEN"}':
+                      .: {}
+                      'f:name': {}
+                      'f:valueFrom':
+                        .: {}
+                        'f:configMapKeyRef': {}
+                  'f:image': {}
+                  'f:imagePullPolicy': {}
+                  'f:name': {}
+                  'f:resources': {}
+                  'f:terminationMessagePath': {}
+                  'f:terminationMessagePolicy': {}
+              'f:dnsPolicy': {}
+              'f:restartPolicy': {}
+              'f:schedulerName': {}
+              'f:securityContext': {}
+              'f:terminationGracePeriodSeconds': {}
+      manager: GoogleCloudConsole
+      operation: Update
+      time: '2022-08-30T08:49:29Z'
+    - apiVersion: apps/v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:metadata':
+          'f:annotations':
+            .: {}
+            'f:deployment.kubernetes.io/revision': {}
+        'f:status':
+          'f:availableReplicas': {}
+          'f:conditions':
+            .: {}
+            'k:{"type":"Available"}':
+              .: {}
+              'f:lastTransitionTime': {}
+              'f:lastUpdateTime': {}
+              'f:message': {}
+              'f:reason': {}
+              'f:status': {}
+              'f:type': {}
+            'k:{"type":"Progressing"}':
+              .: {}
+              'f:lastTransitionTime': {}
+              'f:lastUpdateTime': {}
+              'f:message': {}
+              'f:reason': {}
+              'f:status': {}
+              'f:type': {}
+          'f:observedGeneration': {}
+          'f:readyReplicas': {}
+          'f:replicas': {}
+          'f:updatedReplicas': {}
+      manager: kube-controller-manager
+      operation: Update
+      subresource: status
+      time: '2022-08-30T08:49:49Z'
+  name: devils-aide
+  namespace: default
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      stage: production
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        stage: production
+    spec:
+      containers:
+        - env:
+            - name: DISCORD_TOKEN
+              valueFrom:
+                configMapKeyRef:
+                  key: DISCORD_TOKEN
+                  name: devils-aide-config-0n8y
+          image: gcr.io/devils-aide-bot/github.com/theyarelulu/devils-aide
+          imagePullPolicy: IfNotPresent
+          name: devils-aide-1
+---
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  labels:
+    stage: production
+  managedFields:
+    - apiVersion: autoscaling/v2beta1
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:metadata':
+          'f:labels':
+            .: {}
+            'f:stage': {}
+        'f:spec':
+          'f:maxReplicas': {}
+          'f:metrics': {}
+          'f:minReplicas': {}
+          'f:scaleTargetRef':
+            'f:apiVersion': {}
+            'f:kind': {}
+            'f:name': {}
+      manager: GoogleCloudConsole
+      operation: Update
+      time: '2022-08-30T08:49:29Z'
+    - apiVersion: autoscaling/v2beta2
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:status':
+          'f:conditions': {}
+          'f:currentMetrics': {}
+          'f:currentReplicas': {}
+          'f:desiredReplicas': {}
+      manager: vpa-recommender
+      operation: Update
+      subresource: status
+      time: '2022-08-30T08:49:45Z'
+  name: devils-aide-hpa-bic7
+  namespace: default
+spec:
+  maxReplicas: 1
+  metrics:
+    - resource:
+        name: cpu
+        targetAverageUtilization: 80
+      type: Resource
+  minReplicas: 1
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: devils-aide
