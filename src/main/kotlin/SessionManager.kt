@@ -28,6 +28,7 @@ class SessionManager(category: Category) {
         scope.launch {
             // add session channels to the map, associating them by user id
             category.textChannels
+                .filterNot { it.memberPermissionOverrides.isEmpty() }
                 .associateTo(sessions) { it.memberPermissionOverrides.single().idLong to CompletableDeferred(it.idLong) }
         }
     }
